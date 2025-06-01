@@ -64,8 +64,15 @@ AmortizationCalc::AmortizationCalc(QWidget *parent) : QWidget(parent) {
     table->setColumnCount(6); // <-- Change to 6 columns
     QStringList headers = {"Payment #", "Payment", "Principal", "Interest", "Balance", "One-Time Payment"}; // <-- Add column
     table->setHorizontalHeaderLabels(headers);
+    table->setColumnWidth(0, 80); // Make "Payment #" column wider so full text is visible
 
-    // Left-justify all column headers
+    table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);         // First column fixed
+    table->horizontalHeader()->setSectionResizeMode(5, QHeaderView::Stretch);       // Last column stretches
+    for (int i = 1; i < 5; ++i) {
+        table->horizontalHeader()->setSectionResizeMode(i, QHeaderView::Interactive);
+    }
+
+    // Left-justify all header titles
     for (int i = 0; i < headers.size(); ++i) {
         QTableWidgetItem *headerItem = table->horizontalHeaderItem(i);
         if (headerItem) {
@@ -73,7 +80,6 @@ AmortizationCalc::AmortizationCalc(QWidget *parent) : QWidget(parent) {
         }
     }
 
-    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     leftLayout->addWidget(table);
 
     mainLayout->addLayout(leftLayout, 1);   // half width
@@ -448,7 +454,7 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     AmortizationCalc window;
     window.setWindowTitle("Amortization Calculator");
-    window.resize(700, 500);
+    window.resize(1300, 600); // Set default size to 1300x600
     window.show();
     return app.exec();
 }
