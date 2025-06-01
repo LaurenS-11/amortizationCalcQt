@@ -10,6 +10,13 @@
 #include <QStringList>
 #include <QLocale>
 #include <QApplication>
+#include <QFileDialog>
+#include <QFile>
+#include <QTextStream>
+#include <QToolTip>
+#include <QTimer>
+#include <QMouseEvent>
+#include <limits>
 
 AmortizationCalc::AmortizationCalc(QWidget *parent) : QWidget(parent) {
     auto *mainLayout = new QHBoxLayout(this);
@@ -124,6 +131,48 @@ AmortizationCalc::AmortizationCalc(QWidget *parent) : QWidget(parent) {
     connect(termTypeBox, &QComboBox::currentTextChanged, this, [this](const QString &text) {
         termLabel->setText(QString("Term (%1):").arg(text));
     });
+
+    exportButton = new QPushButton("Export CSV");
+    leftLayout->addWidget(exportButton);
+
+    connect(exportButton, &QPushButton::clicked, this, &AmortizationCalc::exportCsv);
+
+    tooltipTimer = new QTimer(this);
+    tooltipTimer->setInterval(200); // refresh every 200ms
+    connect(tooltipTimer, &QTimer::timeout, this, [this]() {
+        if (tooltipActive && !lastTooltipText.isEmpty()) {
+            QToolTip::showText(lastTooltipPos, lastTooltipText, chartView);
+        }
+    });
+
+    auto makeHoverHandler = [this](const QString &label) {
+        return [this, label](const QPointF &point, bool state) {
+            if (state) {
+                lastTooltipText = QString("%1\nX: %2\nY: %3")
+                    .arg(label)
+                    .arg(point.x())
+                    .arg(point.y(), 0, 'f', 2);
+                lastTooltipPos = QCursor::pos();
+                QToolTip::showText(lastTooltipPos, lastTooltipText, chartView);
+                tooltipActive = true;
+                if (!tooltipTimer->isActive())
+                    tooltipTimer->start();
+            } else {
+                lastTooltipText.clear();
+                tooltipActive = false;
+                tooltipTimer->stop();
+                QToolTip::hideText();
+            }
+        };
+    };
+
+    connect(principalSeries, &QLineSeries::hovered, this, makeHoverHandler("Principal"));
+    connect(interestSeries, &QLineSeries::hovered, this, makeHoverHandler("Interest"));
+    connect(totalSeries, &QLineSeries::hovered, this, makeHoverHandler("Total"));
+
+    chartView->setMouseTracking(true);
+    chartView->viewport()->setMouseTracking(true);
+    chartView->viewport()->installEventFilter(this);
 }
 
 void AmortizationCalc::calculate() {
@@ -137,7 +186,8 @@ void AmortizationCalc::calculate() {
 
     double termValue = termStr.toDouble();
     int months = 0;
-    if (termTypeBox->currentText() == "Years") {
+    bool useYears = (termTypeBox->currentText() == "Years");
+    if (useYears) {
         months = static_cast<int>(termValue * 12);
     } else {
         months = static_cast<int>(termValue);
@@ -243,28 +293,145 @@ void AmortizationCalc::calculate() {
 
     double runningPrincipal = 0.0;
     double runningInterest = 0.0;
-    for (int row = 0; row < months; ++row) {
-        double p = table->item(row, 2) ? table->item(row, 2)->text().toDouble() : 0.0;
-        double in = table->item(row, 3) ? table->item(row, 3)->text().toDouble() : 0.0;
-        runningPrincipal += p;
-        runningInterest += in;
-        principalSeries->append(row + 1, runningPrincipal);
-        interestSeries->append(row + 1, runningInterest);
-        totalSeries->append(row + 1, runningPrincipal + runningInterest);
+    if (useYears) {
+        int totalYears = (months + 11) / 12;
+        for (int year = 1; year <= totalYears; ++year) {
+            int lastMonthOfYear = std::min(year * 12, months);
+            // Accumulate up to the end of this year (cumulative)
+            for (int row = (year - 1) * 12; row < lastMonthOfYear; ++row) {
+                double p = table->item(row, 2) ? table->item(row, 2)->text().toDouble() : 0.0;
+                double in = table->item(row, 3) ? table->item(row, 3)->text().toDouble() : 0.0;
+                runningPrincipal += p;
+                runningInterest += in;
+            }
+            principalSeries->append(year, runningPrincipal);
+            interestSeries->append(year, runningInterest);
+            totalSeries->append(year, runningPrincipal + runningInterest);
+        }
+    } else {
+        runningPrincipal = 0.0;
+        runningInterest = 0.0;
+        for (int row = 0; row < months; ++row) {
+            double p = table->item(row, 2) ? table->item(row, 2)->text().toDouble() : 0.0;
+            double in = table->item(row, 3) ? table->item(row, 3)->text().toDouble() : 0.0;
+            runningPrincipal += p;
+            runningInterest += in;
+            principalSeries->append(row + 1, runningPrincipal);
+            interestSeries->append(row + 1, runningInterest);
+            totalSeries->append(row + 1, runningPrincipal + runningInterest);
+        }
     }
-    chartView->chart()->axes(Qt::Horizontal).first()->setRange(1, months);
-    chartView->chart()->axes(Qt::Vertical).first()->setRange(0, runningPrincipal + runningInterest);
 
-    // After updating the chart data, update the axis range and tick interval:
+    // Update axis labels and ticks
     QValueAxis *axisX = qobject_cast<QValueAxis *>(chartView->chart()->axisX());
     if (axisX) {
-        axisX->setRange(1, months);
-        axisX->setTickInterval(10); // Always show ticks every 10 months
+        if (useYears) {
+            axisX->setTitleText("Year");
+            axisX->setLabelFormat("%d");
+            int totalYears = (months + 11) / 12;
+            axisX->setRange(1, totalYears);
+            axisX->setTickInterval(10); // 10 years per tick
+        } else {
+            axisX->setTitleText("Month");
+            axisX->setLabelFormat("%d");
+            axisX->setRange(1, months);
+            axisX->setTickInterval(10); // 10 months per tick
+        }
     }
     QValueAxis *axisY = qobject_cast<QValueAxis *>(chartView->chart()->axisY());
     if (axisY) {
         axisY->setRange(0, runningPrincipal + runningInterest);
     }
+} // <-- This closes AmortizationCalc::calculate()
+
+void AmortizationCalc::exportCsv() {
+    QString fileName = QFileDialog::getSaveFileName(this, "Export Table as CSV", "", "CSV Files (*.csv)");
+    if (fileName.isEmpty())
+        return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        resultLabel->setText("Failed to open file for writing.");
+        return;
+    }
+
+    QTextStream out(&file);
+
+    // Write headers
+    QStringList headers;
+    for (int col = 0; col < table->columnCount(); ++col)
+        headers << table->horizontalHeaderItem(col)->text();
+    out << headers.join(",") << "\n";
+
+    // Write data
+    for (int row = 0; row < table->rowCount(); ++row) {
+        QStringList rowData;
+        for (int col = 0; col < table->columnCount(); ++col) {
+            QTableWidgetItem *item = table->item(row, col);
+            rowData << (item ? item->text() : "");
+        }
+        out << rowData.join(",") << "\n";
+    }
+    file.close();
+    resultLabel->setText("Exported table to: " + fileName);
+}
+
+bool AmortizationCalc::eventFilter(QObject *obj, QEvent *event) {
+    if (obj == chartView->viewport()) {
+        if (event->type() == QEvent::MouseMove) {
+            QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+
+            auto findNearest = [&](QLineSeries *series) -> std::pair<QPointF, double> {
+                QPointF nearest;
+                double minDist = std::numeric_limits<double>::max();
+                for (const QPointF &pt : series->points()) {
+                    QPointF ptPixel = chartView->chart()->mapToPosition(pt, series);
+                    double dist = std::hypot(ptPixel.x() - mouseEvent->pos().x(), ptPixel.y() - mouseEvent->pos().y());
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = pt;
+                    }
+                }
+                return {nearest, minDist};
+            };
+
+            const double threshold = 10.0; // pixels
+
+            auto [pPt, pDist] = findNearest(principalSeries);
+            auto [iPt, iDist] = findNearest(interestSeries);
+            auto [tPt, tDist] = findNearest(totalSeries);
+
+            double minDist = std::min({pDist, iDist, tDist});
+            QString tip;
+            if (minDist < threshold) {
+                if (minDist == pDist) {
+                    tip = QString("Principal\nX: %1\nY: %2").arg(pPt.x()).arg(pPt.y(), 0, 'f', 2);
+                } else if (minDist == iDist) {
+                    tip = QString("Interest\nX: %1\nY: %2").arg(iPt.x()).arg(iPt.y(), 0, 'f', 2);
+                } else {
+                    tip = QString("Total\nX: %1\nY: %2").arg(tPt.x()).arg(tPt.y(), 0, 'f', 2);
+                }
+                lastTooltipText = tip;
+                lastTooltipPos = mouseEvent->globalPos();
+                tooltipActive = true;
+                QToolTip::showText(lastTooltipPos, lastTooltipText, chartView);
+                if (!tooltipTimer->isActive())
+                    tooltipTimer->start();
+            } else {
+                tooltipActive = false;
+                tooltipTimer->stop();
+                QToolTip::hideText();
+            }
+            return true;
+        }
+        if (event->type() == QEvent::Leave) {
+            tooltipActive = false;
+            tooltipTimer->stop();
+            QToolTip::hideText();
+            return true;
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }
 
 int main(int argc, char *argv[]) {

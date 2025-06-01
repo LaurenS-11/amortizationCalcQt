@@ -438,4 +438,7 @@ CMakeFiles/amortizationCalcQt.dir/amortizationCalcQt_autogen/mocs_compilation.cp
  /usr/include/x86_64-linux-gnu/qt6/QtCharts/QXYSeries \
  /usr/include/x86_64-linux-gnu/qt6/QtCharts/qxyseries.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QImage \
- /usr/include/x86_64-linux-gnu/qt6/QtGui/qimage.h
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qimage.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QTimer \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimer.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qbasictimer.h

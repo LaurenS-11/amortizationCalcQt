@@ -8,6 +8,7 @@
 #include <QTableWidget>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
+#include <QTimer>
 
 class AmortizationCalc : public QWidget {
     Q_OBJECT
@@ -17,6 +18,7 @@ public:
 
 private slots:
     void calculate();
+    void exportCsv();
 
 private:
     QLineEdit *principalEdit;
@@ -25,6 +27,7 @@ private:
     QComboBox *typeBox;
     QComboBox *termTypeBox;
     QPushButton *calcButton;
+    QPushButton *exportButton;
     QLabel *resultLabel;
     QLabel *totalInterestLabel;
     QLabel *monthsPaidLabel;
@@ -35,4 +38,11 @@ private:
     QLineSeries *principalSeries;
     QLineSeries *interestSeries;
     QLineSeries *totalSeries;
+    QTimer *tooltipTimer = nullptr;
+    bool tooltipActive = false;
+    QString lastTooltipText;
+    QPoint lastTooltipPos;
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
 };
