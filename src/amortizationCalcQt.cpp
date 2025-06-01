@@ -173,9 +173,17 @@ AmortizationCalc::AmortizationCalc(QWidget *parent) : QWidget(parent) {
     chartView->setMouseTracking(true);
     chartView->viewport()->setMouseTracking(true);
     chartView->viewport()->installEventFilter(this);
+
+    connect(table, &QTableWidget::cellChanged, this, [this](int row, int col) {
+        // Only recalculate if the "One-Time Payment" column (index 5) is edited
+        if (col == 5) {
+            this->calculate();
+        }
+    });
 }
 
 void AmortizationCalc::calculate() {
+    table->blockSignals(true);
     // Remove commas from input before conversion
     QString principalStr = principalEdit->text().remove(',');
     QString rateStr = rateEdit->text().remove(',');
@@ -197,6 +205,7 @@ void AmortizationCalc::calculate() {
         resultLabel->setText("Please enter valid values.");
         table->setRowCount(0);
         totalInterestLabel->clear();
+        table->blockSignals(false);
         return;
     }
 
@@ -342,6 +351,7 @@ void AmortizationCalc::calculate() {
     if (axisY) {
         axisY->setRange(0, runningPrincipal + runningInterest);
     }
+    table->blockSignals(false);
 } // <-- This closes AmortizationCalc::calculate()
 
 void AmortizationCalc::exportCsv() {
