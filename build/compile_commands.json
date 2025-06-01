@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/rayla/cpp_projects/amortizationCalcQt/build",
+  "command": "/usr/bin/c++ -DQT_CHARTS_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/rayla/cpp_projects/amortizationCalcQt/build -I/home/rayla/cpp_projects/amortizationCalcQt -I/home/rayla/cpp_projects/amortizationCalcQt/build/amortizationCalcQt_autogen/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCharts -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtOpenGL -isystem /usr/include/x86_64-linux-gnu/qt6/QtOpenGLWidgets -g -std=gnu++17 -fPIC -o CMakeFiles/amortizationCalcQt.dir/amortizationCalcQt_autogen/mocs_compilation.cpp.o -c /home/rayla/cpp_projects/amortizationCalcQt/build/amortizationCalcQt_autogen/mocs_compilation.cpp",
+  "file": "/home/rayla/cpp_projects/amortizationCalcQt/build/amortizationCalcQt_autogen/mocs_compilation.cpp",
+  "output": "CMakeFiles/amortizationCalcQt.dir/amortizationCalcQt_autogen/mocs_compilation.cpp.o"
+},
+{
+  "directory": "/home/rayla/cpp_projects/amortizationCalcQt/build",
+  "command": "/usr/bin/c++ -DQT_CHARTS_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_OPENGLWIDGETS_LIB -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -I/home/rayla/cpp_projects/amortizationCalcQt/build -I/home/rayla/cpp_projects/amortizationCalcQt -I/home/rayla/cpp_projects/amortizationCalcQt/build/amortizationCalcQt_autogen/include -isystem /usr/include/x86_64-linux-gnu/qt6/QtCharts -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtOpenGL -isystem /usr/include/x86_64-linux-gnu/qt6/QtOpenGLWidgets -g -std=gnu++17 -fPIC -o CMakeFiles/amortizationCalcQt.dir/src/amortizationCalcQt.cpp.o -c /home/rayla/cpp_projects/amortizationCalcQt/src/amortizationCalcQt.cpp",
+  "file": "/home/rayla/cpp_projects/amortizationCalcQt/src/amortizationCalcQt.cpp",
+  "output": "CMakeFiles/amortizationCalcQt.dir/src/amortizationCalcQt.cpp.o"
+}
+]
